@@ -1,0 +1,22 @@
+gateway:
+  replicaCount: 1
+  image: gateway
+  port: 8090
+
+  probe:
+    port: 8080
+    path: /ready
+
+worker:
+  replicaCount: 5
+  image: worker
+
+ingress:
+  host: "localhost"
+  path: "/"
+
+postgres:
+  username: "postgres"
+  password: "1234"
+  dbName: "Tasks"
+

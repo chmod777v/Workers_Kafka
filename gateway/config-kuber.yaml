@@ -1,0 +1,16 @@
+env: "development" #production
+
+server:
+  port: 8090
+  host: "0.0.0.0"
+
+kafka:
+  host: "kafka-service"
+  port: 9092
+
+database:
+  username: "postgres"
+  password: "1234"
+  host: "postgres-service"
+  port: 5432
+  db_name: "Tasks"
