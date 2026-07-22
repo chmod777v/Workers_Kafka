@@ -10,8 +10,14 @@ import (
 type Config struct {
 	Env    string   `yaml:"env"`
 	Server Server   `yaml:"server"`
-	Db     Database `yaml:"database"`
 	Kafka  Kafka    `yaml:"kafka"`
+	Db     Database `yaml:"database"`
+	Metric Metric   `yaml:"metric"`
+}
+
+type Server struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
 }
 
 type Kafka struct {
@@ -27,9 +33,9 @@ type Database struct {
 	DbName   string `yaml:"db_name"`
 }
 
-type Server struct {
-	Port int    `yaml:"port"`
+type Metric struct {
 	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
 }
 
 func LoadConfig() *Config {

@@ -91,8 +91,7 @@ func NewRouter(writer *kafka.Writer, dbpool *pgxpool.Pool) *chi.Mux {
 	return router
 }
 
-func Shutdown(server *http.Server, serverErr chan error) {
-	defer close(serverErr)
+func Shutdown(serverServ *http.Server, serverErr chan error, metricServ *http.Server, metricErr chan error) {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -101,16 +100,25 @@ func Shutdown(server *http.Server, serverErr chan error) {
 		slog.Info("Shutdown")
 	case err := <-serverErr:
 		slog.Error("Server error", "ERROR", err)
+	case err := <-metricErr:
+		slog.Error("Metric error", "ERROR", err)
 	}
 
 	//SHUTDOWN
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := serverServ.Shutdown(ctx); err != nil {
 		slog.Error("Failed to stop server", "ERROR:", err.Error())
-		server.Close()
+		serverServ.Close()
+	} else {
+		slog.Info("Server stopped successfully")
 	}
 
-	slog.Info("Server stopped successfully")
+	if err := metricServ.Shutdown(ctx); err != nil {
+		slog.Error("Failed to stop metric", "ERROR:", err.Error())
+		metricServ.Close()
+	} else {
+		slog.Info("Metric stopped successfully")
+	}
 }

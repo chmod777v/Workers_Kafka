@@ -9,6 +9,7 @@ import (
 	"workers_kafka_gateway/internal/config"
 	my_kafka "workers_kafka_gateway/internal/kafka"
 	"workers_kafka_gateway/internal/logger"
+	"workers_kafka_gateway/internal/metric"
 	"workers_kafka_gateway/internal/rest/server"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -86,22 +87,41 @@ func main() {
 		slog.Info("Kafka Listener closed successfully")
 	}()
 
-	// Server
-	router := server.NewRouter(writer, dbpool)
+	// Metrics/HealthCheck
+	metricRouter := metric.NewRouter()
 
-	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	serv := &http.Server{
-		Addr:    addr,
-		Handler: router,
+	metricAddr := fmt.Sprintf("%s:%d", cfg.Metric.Host, cfg.Metric.Port)
+	metricServ := &http.Server{
+		Addr:    metricAddr,
+		Handler: metricRouter,
+	}
+
+	metricErr := make(chan error, 1)
+	go func() {
+		defer close(metricErr)
+		if err := metricServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			metricErr <- err
+		}
+	}()
+	slog.Info("Metric started", "Addr", metricAddr)
+
+	// Server
+	serverRouter := server.NewRouter(writer, dbpool)
+
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	serverServ := &http.Server{
+		Addr:    serverAddr,
+		Handler: serverRouter,
 	}
 
 	serverErr := make(chan error, 1)
 	go func() {
-		if err := serv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		defer close(serverErr)
+		if err := serverServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			serverErr <- err
 		}
 	}()
-	slog.Info("Server started", "Addr", addr)
+	slog.Info("Server started", "Addr", serverAddr)
 
-	server.Shutdown(serv, serverErr)
+	server.Shutdown(serverServ, serverErr, metricServ, metricErr)
 }
