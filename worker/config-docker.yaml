@@ -1,0 +1,7 @@
+env: "development" #production
+
+kafka:
+  host: "kafka"
+  port: 9094
+
+

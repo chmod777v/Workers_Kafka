@@ -3,9 +3,9 @@ global:
   evaluation_interval: 3s
 
 scrape_configs:
-  - job_name: "server"
+  - job_name: "gateway"
     scrape_interval: 3s
     scrape_timeout: 3s
     metrics_path: /metrics
     static_configs:
-      - targets: ["server:8081"]
+      - targets: ["gateway:8091"]
