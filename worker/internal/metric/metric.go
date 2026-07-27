@@ -1,7 +1,6 @@
 package metric
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -22,28 +21,16 @@ func NewRouter() *chi.Mux {
 }
 
 var (
-	requestTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "gateway",
-			Subsystem: "http",
-			Name:      "requests_total",
-			Help:      "Total HTTP requests",
-		},
-		[]string{"method", "status"},
-	)
-
 	requestDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Namespace: "gateway",
-			Subsystem: "http",
+			Namespace: "worker",
 			Name:      "request_duration_seconds",
-			Help:      "HTTP request duration in seconds",
+			Help:      "request duration in seconds",
 			Buckets:   prometheus.DefBuckets, // можно свои: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10}
-		}, []string{"method", "status"},
+		}, []string{},
 	)
 )
 
-func ObserveRequest(method string, duration time.Duration, status int) {
-	requestDuration.WithLabelValues(method, strconv.Itoa(status)).Observe(duration.Seconds())
-	requestTotal.WithLabelValues(method, strconv.Itoa(status)).Inc()
+func ObserveRequest(duration time.Duration) {
+	requestDuration.WithLabelValues().Observe(duration.Seconds())
 }

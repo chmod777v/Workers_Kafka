@@ -1,14 +1,14 @@
 package config
 
 import (
-	"flag"
+	"errors"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env    string   `yaml:"env"`
+	Env    string   `yaml:"env" env:"ENV"`
 	Server Server   `yaml:"server"`
 	Kafka  Kafka    `yaml:"kafka"`
 	Db     Database `yaml:"database"`
@@ -16,44 +16,39 @@ type Config struct {
 }
 
 type Server struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `yaml:"host" env:"SERVER_HOST"`
+	Port int    `yaml:"port" env:"SERVER_PORT"`
 }
 
 type Kafka struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `yaml:"host" env:"KAFKA_HOST"`
+	Port int    `yaml:"port" env:"KAFKA_PORT"`
 }
 
 type Database struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	DbName   string `yaml:"db_name"`
+	Username string `yaml:"username" env:"DB_USERNAME"`
+	Password string `yaml:"password" env:"DB_PASSWORD"`
+	Host     string `yaml:"host" env:"DB_HOST"`
+	Port     int    `yaml:"port" env:"DB_PORT"`
+	DbName   string `yaml:"db_name" env:"DB_NAME"`
 }
 
 type Metric struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `yaml:"host" env:"METRIC_HOST"`
+	Port int    `yaml:"port" env:"METRIC_PORT"`
 }
 
 func LoadConfig() *Config {
-	var path string
-	flag.StringVar(&path, "config", "", "path") //"config" - имя флага (--config) "path" - описание для справки
-	flag.Parse()
-	if path == "" {
-		path = os.Getenv("CONFIG_PATH")
-	}
-	if path == "" {
-		panic("CONFIG_PATH is empty")
-	}
-	if _, err := os.Stat(path); os.IsNotExist(err) { //os.Stat- - Проверка существует ли файл, os.IsNotExist-если нет то
-		panic("Config file does not exist: " + path)
-	}
 	var cfg Config
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		panic("Failet to read config" + err.Error())
+	if err := cleanenv.ReadConfig("config-local.yaml", &cfg); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			if err := cleanenv.ReadEnv(&cfg); err != nil {
+				panic("Config is empty & failed to read env:" + err.Error())
+			}
+
+		} else {
+			panic("Failet to read config" + err.Error())
+		}
 	}
 	return &cfg
 }

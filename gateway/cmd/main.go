@@ -16,6 +16,7 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
+	fmt.Println(cfg.Env)
 	logger.InitLogger(cfg.Env)
 	slog.Info("Cfg, Logger launched successfully")
 

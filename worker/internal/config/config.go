@@ -1,38 +1,39 @@
 package config
 
 import (
-	"flag"
+	"errors"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env   string `yaml:"env"`
-	Kafka Kafka  `yaml:"kafka"`
+	Env    string `yaml:"env" env:"ENV"`
+	Kafka  Kafka  `yaml:"kafka"`
+	Metric Metric `yaml:"metric"`
 }
 
 type Kafka struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `yaml:"host" env:"KAFKA_HOST"`
+	Port int    `yaml:"port" env:"KAFKA_PORT"`
+}
+
+type Metric struct {
+	Host string `yaml:"host" env:"METRIC_HOST"`
+	Port int    `yaml:"port" env:"METRIC_PORT"`
 }
 
 func LoadConfig() *Config {
-	var path string
-	flag.StringVar(&path, "config", "", "path") //"config" - имя флага (--config) "path" - описание для справки
-	flag.Parse()
-	if path == "" {
-		path = os.Getenv("CONFIG_PATH")
-	}
-	if path == "" {
-		panic("CONFIG_PATH is empty")
-	}
-	if _, err := os.Stat(path); os.IsNotExist(err) { //os.Stat- - Проверка существует ли файл, os.IsNotExist-если нет то
-		panic("Config file does not exist: " + path)
-	}
 	var cfg Config
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		panic("Failet to read config" + err.Error())
+	if err := cleanenv.ReadConfig("config-local.yaml", &cfg); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			if err := cleanenv.ReadEnv(&cfg); err != nil {
+				panic("Config is empty & failed to read env:" + err.Error())
+			}
+
+		} else {
+			panic("Failet to read config" + err.Error())
+		}
 	}
 	return &cfg
 }
