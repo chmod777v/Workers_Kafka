@@ -12,9 +12,6 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/config-docker.yaml .
 
-EXPOSE 8090
-EXPOSE 8091
 RUN chmod +x main
-CMD ["./main", "--config", "./config-docker.yaml"]
+CMD ["./main"]

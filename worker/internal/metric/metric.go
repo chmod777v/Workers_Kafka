@@ -26,7 +26,7 @@ var (
 			Namespace: "worker",
 			Name:      "request_duration_seconds",
 			Help:      "request duration in seconds",
-			Buckets:   prometheus.DefBuckets, // можно свои: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10}
+			Buckets:   prometheus.DefBuckets,
 		}, []string{},
 	)
 )

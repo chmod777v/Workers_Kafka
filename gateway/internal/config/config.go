@@ -30,7 +30,7 @@ type Database struct {
 	Password string `yaml:"password" env:"DB_PASSWORD"`
 	Host     string `yaml:"host" env:"DB_HOST"`
 	Port     int    `yaml:"port" env:"DB_PORT"`
-	DbName   string `yaml:"db_name" env:"DB_NAME"`
+	DbName   string `yaml:"db_name" env:"DB_DBNAME"`
 }
 
 type Metric struct {
@@ -40,7 +40,7 @@ type Metric struct {
 
 func LoadConfig() *Config {
 	var cfg Config
-	if err := cleanenv.ReadConfig("config-local.yaml", &cfg); err != nil {
+	if err := cleanenv.ReadConfig("config.yaml", &cfg); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			if err := cleanenv.ReadEnv(&cfg); err != nil {
 				panic("Config is empty & failed to read env:" + err.Error())

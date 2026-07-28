@@ -18,3 +18,31 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: {{ .Values.gateway.port }}
+        env:
+          - name: ENV
+            value: development
+          - name: SERVER_HOST
+            value: "0.0.0.0"
+          - name: SERVER_PORT
+            value: 8090
+
+          - name: KAFKA_HOST
+            value: kafka-service
+          - name: KAFKA_PORT
+            value: 9092
+
+          - name: DB_USERNAME
+            value: postgres
+          - name: DB_PASSWORD
+            value: "1234"
+          - name: DB_HOST
+            value: postgres-service
+          - name: DB_PORT
+            value: 5432
+          - name: DB_DBNAME
+            value: Tasks
+
+          - name: METRIC_HOST
+            value: "0.0.0.0"
+          - name: METRIC_PORT
+            value: 8091

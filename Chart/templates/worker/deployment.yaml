@@ -16,3 +16,15 @@ spec:
       - name: worker
         image: {{ .Values.worker.image }}
         imagePullPolicy: Never
+        env:
+          - name: ENV
+            value: development
+          - name: KAFKA_HOST
+            value: kafka-service
+          - name: KAFKA_PORT
+            value: 9092
+
+          - name: METRIC_HOST
+            value: "0.0.0.0"
+          - name: METRIC_PORT
+            value: 9091

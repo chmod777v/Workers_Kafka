@@ -95,11 +95,27 @@ services:
   gateway:
     build:
       context: ./gateway
-      dockerfile: ./Dockerfile.docker
+      dockerfile: ./Dockerfile
     container_name: gateway
     ports:
       - "8090:8090"
       - "8091:8091"
+    environment:
+      ENV: development
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8090
+
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9094
+
+      DB_USERNAME: postgres
+      DB_PASSWORD: "1234"
+      DB_HOST: postgresql
+      DB_PORT: 5432
+      DB_DBNAME: Tasks
+
+      METRIC_HOST: 0.0.0.0
+      METRIC_PORT: 8091
     logging: 
       driver: json-file
       options:
@@ -111,6 +127,15 @@ services:
       context: ./worker
       dockerfile: ./Dockerfile.docker
     container_name: worker
+    ports:
+      - "9091:9091"
+    environment:
+      ENV: development
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9094
+
+      METRIC_HOST: 0.0.0.0
+      METRIC_PORT: 9091
     logging: 
       driver: json-file
       options:

@@ -13,7 +13,7 @@ func Worker(id string) string { //Имитация работы
 	start := time.Now()
 	slog.Debug("", "Message", id, "Status", "Processing")
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * time.Duration(rand.Intn(7)+3))
 	msg := message[rand.Intn(5)]
 
 	slog.Debug("", "Message", id, "Status", "Finished")
