@@ -1,6 +1,6 @@
 gateway:
   replicaCount: 1
-  image: gateway
+  image: workers_kafka-gateway
   port: 8090
 
   probe:
@@ -9,7 +9,7 @@ gateway:
 
 worker:
   replicaCount: 5
-  image: worker
+  image: workers_kafka-worker
 
 ingress:
   host: "localhost"

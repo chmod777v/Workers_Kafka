@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"workers_kafka_gateway/internal/config"
+	"workers_kafka_gateway/internal/healthcheck"
 	my_kafka "workers_kafka_gateway/internal/kafka"
 	"workers_kafka_gateway/internal/logger"
 	"workers_kafka_gateway/internal/metric"
-	"workers_kafka_gateway/internal/rest/server"
+	"workers_kafka_gateway/internal/rest/gateway"
+
+	"workers_kafka_gateway/internal/shutdown"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -18,6 +20,12 @@ func main() {
 	cfg := config.LoadConfig()
 	logger.InitLogger(cfg.Env)
 	slog.Info("Cfg, Logger launched successfully")
+
+	errChan := make(chan error, 10)
+	//Helthcheck start
+	hcAddr := fmt.Sprintf("%s:%d", cfg.HealthCheck.Host, cfg.HealthCheck.Port)
+	healthCheck := healthcheck.StartHealthCheck(hcAddr, errChan)
+	slog.Info("Healthcheck started", "Addr", hcAddr)
 
 	//DB
 	dbLink := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
@@ -60,41 +68,19 @@ func main() {
 		slog.Info("Kafka Listener closed successfully")
 	}()
 
-	// Metrics/HealthCheck
-	metricRouter := metric.NewRouter()
-
+	// Metrics
 	metricAddr := fmt.Sprintf("%s:%d", cfg.Metric.Host, cfg.Metric.Port)
-	metricServ := &http.Server{
-		Addr:    metricAddr,
-		Handler: metricRouter,
-	}
-
-	metricErr := make(chan error, 1)
-	go func() {
-		defer close(metricErr)
-		if err := metricServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			metricErr <- err
-		}
-	}()
+	metric := metric.StartMetric(metricAddr, errChan)
 	slog.Info("Metric started", "Addr", metricAddr)
 
-	// Server
-	serverRouter := server.NewRouter(manager.Writer, dbpool)
+	// Gateway
+	gatewayAddr := fmt.Sprintf("%s:%d", cfg.Gateway.Host, cfg.Gateway.Port)
+	gateway := gateway.StartGateway(gatewayAddr, errChan, manager.Writer, dbpool)
+	slog.Info("Gateway started", "Addr", gatewayAddr)
 
-	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	serverServ := &http.Server{
-		Addr:    serverAddr,
-		Handler: serverRouter,
-	}
+	//READY
+	healthCheck.Ready()
+	slog.Info("--READY--")
 
-	serverErr := make(chan error, 1)
-	go func() {
-		defer close(serverErr)
-		if err := serverServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			serverErr <- err
-		}
-	}()
-	slog.Info("Server started", "Addr", serverAddr)
-
-	server.Shutdown(serverServ, serverErr, metricServ, metricErr)
+	shutdown.Shutdown(errChan, healthCheck, metric, gateway)
 }

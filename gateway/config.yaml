@@ -1,6 +1,6 @@
 env: "development" #production
 
-server:
+gateway:
   host: "localhost"
   port: 8090
 
@@ -18,3 +18,7 @@ database:
 metric:
   host: "localhost"
   port: 8091
+
+healthcheck:
+  host: "localhost"
+  port: 8092

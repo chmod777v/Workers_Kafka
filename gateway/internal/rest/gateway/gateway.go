@@ -1,4 +1,4 @@
-package server
+package gateway
 
 import (
 	"context"
@@ -7,10 +7,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 	my_middleware "workers_kafka_gateway/internal/rest/middleware"
 
 	"github.com/go-chi/chi/middleware"
@@ -20,6 +16,37 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/segmentio/kafka-go"
 )
+
+type Gateway struct {
+	server *http.Server
+}
+
+func StartGateway(addr string, errChan chan error, writer *kafka.Writer, dbpool *pgxpool.Pool) *Gateway {
+	router := newRouter(writer, dbpool)
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("Gateway error", "ERROR", err)
+			errChan <- err
+		}
+	}()
+
+	return &Gateway{
+		server: server,
+	}
+}
+func (g *Gateway) Close(ctx context.Context) error {
+	if err := g.server.Shutdown(ctx); err != nil {
+		g.server.Close()
+		return err
+	}
+	return nil
+}
 
 func handlerPost(writer *kafka.Writer, dbpool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +105,7 @@ func handlerGet(dbpool *pgxpool.Pool) http.HandlerFunc {
 		w.Write([]byte(message))
 	}
 }
-func NewRouter(writer *kafka.Writer, dbpool *pgxpool.Pool) *chi.Mux {
+func newRouter(writer *kafka.Writer, dbpool *pgxpool.Pool) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Recoverer) //Для перехвата паник
@@ -89,36 +116,4 @@ func NewRouter(writer *kafka.Writer, dbpool *pgxpool.Pool) *chi.Mux {
 	router.Post("/", handlerPost(writer, dbpool))
 	router.Get("/", handlerGet(dbpool))
 	return router
-}
-
-func Shutdown(serverServ *http.Server, serverErr chan error, metricServ *http.Server, metricErr chan error) {
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	select {
-	case <-done:
-		slog.Info("Shutdown")
-	case err := <-serverErr:
-		slog.Error("Server error", "ERROR", err)
-	case err := <-metricErr:
-		slog.Error("Metric error", "ERROR", err)
-	}
-
-	//SHUTDOWN
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := serverServ.Shutdown(ctx); err != nil {
-		slog.Error("Failed to stop server", "ERROR:", err.Error())
-		serverServ.Close()
-	} else {
-		slog.Info("Server stopped successfully")
-	}
-
-	if err := metricServ.Shutdown(ctx); err != nil {
-		slog.Error("Failed to stop metric", "ERROR:", err.Error())
-		metricServ.Close()
-	} else {
-		slog.Info("Metric stopped successfully")
-	}
 }

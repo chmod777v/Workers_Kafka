@@ -21,15 +21,15 @@ spec:
         env:
           - name: ENV
             value: development
-          - name: SERVER_HOST
+          - name: GATEWAY_HOST
             value: "0.0.0.0"
-          - name: SERVER_PORT
-            value: 8090
+          - name: GATEWAY_PORT
+            value: "8090"
 
           - name: KAFKA_HOST
             value: kafka-service
           - name: KAFKA_PORT
-            value: 9092
+            value: "9092"
 
           - name: DB_USERNAME
             value: postgres
@@ -38,11 +38,16 @@ spec:
           - name: DB_HOST
             value: postgres-service
           - name: DB_PORT
-            value: 5432
+            value: "5432"
           - name: DB_DBNAME
             value: Tasks
 
           - name: METRIC_HOST
             value: "0.0.0.0"
           - name: METRIC_PORT
-            value: 8091
+            value: "8091"
+
+          - name: HEALTHCHECK_HOST
+            value: "0.0.0.0"
+          - name: HEALTHCHECK_PORT
+            value: "8092"

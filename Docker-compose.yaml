@@ -102,8 +102,8 @@ services:
       - "8091:8091"
     environment:
       ENV: development
-      SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 8090
+      GATEWAY_HOST: 0.0.0.0
+      GATEWAY_PORT: 8090
 
       KAFKA_HOST: kafka
       KAFKA_PORT: 9094
@@ -116,6 +116,9 @@ services:
 
       METRIC_HOST: 0.0.0.0
       METRIC_PORT: 8091
+
+      HEALTHCHECK_HOST: 0.0.0.0
+      HEALTHCHECK_PORT: 8092
     logging: 
       driver: json-file
       options:

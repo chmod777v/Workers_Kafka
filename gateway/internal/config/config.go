@@ -8,16 +8,17 @@ import (
 )
 
 type Config struct {
-	Env    string   `yaml:"env" env:"ENV"`
-	Server Server   `yaml:"server"`
-	Kafka  Kafka    `yaml:"kafka"`
-	Db     Database `yaml:"database"`
-	Metric Metric   `yaml:"metric"`
+	Env         string      `yaml:"env" env:"ENV"`
+	Gateway     Gateway     `yaml:"gateway"`
+	Kafka       Kafka       `yaml:"kafka"`
+	Db          Database    `yaml:"database"`
+	Metric      Metric      `yaml:"metric"`
+	HealthCheck HealthCheck `yaml:"healthcheck"`
 }
 
-type Server struct {
-	Host string `yaml:"host" env:"SERVER_HOST"`
-	Port int    `yaml:"port" env:"SERVER_PORT"`
+type Gateway struct {
+	Host string `yaml:"host" env:"GATEWAY_HOST"`
+	Port int    `yaml:"port" env:"GATEWAY_PORT"`
 }
 
 type Kafka struct {
@@ -36,6 +37,11 @@ type Database struct {
 type Metric struct {
 	Host string `yaml:"host" env:"METRIC_HOST"`
 	Port int    `yaml:"port" env:"METRIC_PORT"`
+}
+
+type HealthCheck struct {
+	Host string `yaml:"host" env:"HEALTHCHECK_HOST"`
+	Port int    `yaml:"port" env:"HEALTHCHECK_PORT"`
 }
 
 func LoadConfig() *Config {

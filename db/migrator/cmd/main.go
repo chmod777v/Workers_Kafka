@@ -23,7 +23,7 @@ func main() {
 		Username: "postgres",
 		Password: "1234",
 		Host:     "localhost",
-		Port:     56483,
+		Port:     52280,
 		DbName:   "Tasks",
 	}
 
