@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-	"workers_kafka_gateway/internal/metric"
+	"workers_kafka_gateway/internal/health"
 
 	"github.com/go-chi/chi/middleware"
 )
@@ -30,7 +30,7 @@ func Logger(h http.Handler) http.Handler {
 			slog.String("duration", time.Since(start).String()),
 		)
 
-		metric.ObserveRequest(r.Method, time.Since(start), ww.Status())
+		health.ObserveRequest(r.Method, time.Since(start), ww.Status())
 	}
 
 	return http.HandlerFunc(fn)

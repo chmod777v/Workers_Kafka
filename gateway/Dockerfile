@@ -1,10 +1,11 @@
 FROM golang:alpine AS builder
 WORKDIR /app
 
-COPY . .
+COPY go.mod go.sum ./
 RUN go mod download
+COPY . .
 
-RUN go build -o main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build  -ldflags="-w -s" -o main ./cmd/main.go 
 
 
 
@@ -15,5 +16,4 @@ COPY --from=builder /app/main .
 
 EXPOSE 8090
 EXPOSE 8091
-RUN chmod +x main
 CMD ["./main"]

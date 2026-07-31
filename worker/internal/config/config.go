@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Env    string `yaml:"env" env:"ENV"`
 	Kafka  Kafka  `yaml:"kafka"`
-	Metric Metric `yaml:"metric"`
+	Health Health `yaml:"health"`
 }
 
 type Kafka struct {
@@ -18,9 +18,9 @@ type Kafka struct {
 	Port int    `yaml:"port" env:"KAFKA_PORT"`
 }
 
-type Metric struct {
-	Host string `yaml:"host" env:"METRIC_HOST"`
-	Port int    `yaml:"port" env:"METRIC_PORT"`
+type Health struct {
+	Host string `yaml:"host" env:"HEALTH_HOST"`
+	Port int    `yaml:"port" env:"HEALTH_PORT"`
 }
 
 func LoadConfig() *Config {

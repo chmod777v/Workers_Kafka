@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"workers_kafka_gateway/internal/config"
-	"workers_kafka_gateway/internal/healthcheck"
+	"workers_kafka_gateway/internal/health"
+
 	my_kafka "workers_kafka_gateway/internal/kafka"
 	"workers_kafka_gateway/internal/logger"
-	"workers_kafka_gateway/internal/metric"
 	"workers_kafka_gateway/internal/rest/gateway"
 
 	"workers_kafka_gateway/internal/shutdown"
@@ -22,12 +22,8 @@ func main() {
 	slog.Info("Cfg, Logger launched successfully")
 
 	errChan := make(chan error, 10)
-	//Helthcheck start
-	hcAddr := fmt.Sprintf("%s:%d", cfg.HealthCheck.Host, cfg.HealthCheck.Port)
-	healthCheck := healthcheck.StartHealthCheck(hcAddr, errChan)
-	slog.Info("Healthcheck started", "Addr", hcAddr)
 
-	//DB
+	// DB
 	dbLink := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		cfg.Db.Username, cfg.Db.Password, cfg.Db.Host, cfg.Db.Port, cfg.Db.DbName)
 
@@ -51,7 +47,11 @@ func main() {
 	// Kafka rw
 	kafkaAddr := fmt.Sprintf("%s:%d", cfg.Kafka.Host, cfg.Kafka.Port)
 
-	manager := my_kafka.NewManager(kafkaAddr)
+	manager, err := my_kafka.NewManager(kafkaAddr)
+	if err != nil {
+		slog.Error("Failed to ping kafka", "ERROR", err.Error())
+		return
+	}
 	slog.Info("Kafka writer and reader launched successfully", "KafkaAddr", kafkaAddr)
 
 	defer func() { //close
@@ -68,19 +68,15 @@ func main() {
 		slog.Info("Kafka Listener closed successfully")
 	}()
 
-	// Metrics
-	metricAddr := fmt.Sprintf("%s:%d", cfg.Metric.Host, cfg.Metric.Port)
-	metric := metric.StartMetric(metricAddr, errChan)
-	slog.Info("Metric started", "Addr", metricAddr)
-
 	// Gateway
 	gatewayAddr := fmt.Sprintf("%s:%d", cfg.Gateway.Host, cfg.Gateway.Port)
 	gateway := gateway.StartGateway(gatewayAddr, errChan, manager.Writer, dbpool)
 	slog.Info("Gateway started", "Addr", gatewayAddr)
 
-	//READY
-	healthCheck.Ready()
-	slog.Info("--READY--")
+	// Helth
+	healthAddr := fmt.Sprintf("%s:%d", cfg.Health.Host, cfg.Health.Port)
+	health := health.StartHealth(healthAddr, errChan, dbpool, kafkaAddr)
+	slog.Info("Health started", "HealthCheckAddr", healthAddr+"/ready"+" & "+healthAddr+"/live", "MetricsAddr", healthAddr+"/metrics")
 
-	shutdown.Shutdown(errChan, healthCheck, metric, gateway)
+	shutdown.Shutdown(errChan, health, gateway)
 }

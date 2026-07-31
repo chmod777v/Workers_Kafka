@@ -3,7 +3,7 @@ services:
     image: confluentinc/cp-kafka
     container_name: kafka
     ports:
-        - 9092:9092
+      - 9092:9092
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 1

@@ -15,10 +15,6 @@ database:
   port: 5432
   db_name: "Tasks"
 
-metric:
+health:
   host: "localhost"
   port: 8091
-
-healthcheck:
-  host: "localhost"
-  port: 8092

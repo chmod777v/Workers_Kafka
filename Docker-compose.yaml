@@ -2,17 +2,15 @@ services:
   kafka:
     image: confluentinc/cp-kafka
     container_name: kafka
-    ports:
-        - 9092:9092
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093    
-      KAFKA_LISTENERS:  CONTROLLER://0.0.0.0:9093, EXTERNAL://0.0.0.0:9092, INTERNAL://0.0.0.0:9094
-      KAFKA_ADVERTISED_LISTENERS: CONTROLLER://kafka:9093, EXTERNAL://localhost:9092, INTERNAL://kafka:9094
+      KAFKA_LISTENERS:  CONTROLLER://0.0.0.0:9093, INTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: CONTROLLER://kafka:9093, INTERNAL://kafka:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT, INTERNAL:PLAINTEXT, EXTERNAL:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT, INTERNAL:PLAINTEXT
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: false
 
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -106,7 +104,7 @@ services:
       GATEWAY_PORT: 8090
 
       KAFKA_HOST: kafka
-      KAFKA_PORT: 9094
+      KAFKA_PORT: 9092
 
       DB_USERNAME: postgres
       DB_PASSWORD: "1234"
@@ -114,11 +112,8 @@ services:
       DB_PORT: 5432
       DB_DBNAME: Tasks
 
-      METRIC_HOST: 0.0.0.0
-      METRIC_PORT: 8091
-
-      HEALTHCHECK_HOST: 0.0.0.0
-      HEALTHCHECK_PORT: 8092
+      HEALTH_HOST: 0.0.0.0
+      HEALTH_PORT: 8091
     logging: 
       driver: json-file
       options:
@@ -128,17 +123,17 @@ services:
   worker:
     build:
       context: ./worker
-      dockerfile: ./Dockerfile.docker
+      dockerfile: ./Dockerfile
     container_name: worker
     ports:
       - "9091:9091"
     environment:
       ENV: development
       KAFKA_HOST: kafka
-      KAFKA_PORT: 9094
+      KAFKA_PORT: 9092
 
-      METRIC_HOST: 0.0.0.0
-      METRIC_PORT: 9091
+      HEALTH_HOST: 0.0.0.0
+      HEALTH_PORT: 9091
     logging: 
       driver: json-file
       options:

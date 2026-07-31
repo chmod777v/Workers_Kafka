@@ -4,6 +4,6 @@ kafka:
   host: "localhost"
   port: 9092
 
-metric:
+health:
   host: "localhost"
   port: 9091

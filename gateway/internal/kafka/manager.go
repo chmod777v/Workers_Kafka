@@ -1,6 +1,7 @@
 package my_kafka
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -12,7 +13,17 @@ type Manager struct {
 	Reader *kafka.Reader
 }
 
-func NewManager(kafkaAddr string) *Manager {
+func NewManager(kafkaAddr string) (*Manager, error) {
+	//Ping
+	kafkaCtx, kafkaCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer kafkaCancel()
+
+	conn, err := kafka.DialContext(kafkaCtx, "tcp", kafkaAddr)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
 	//Writer
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers: []string{kafkaAddr},
@@ -36,7 +47,7 @@ func NewManager(kafkaAddr string) *Manager {
 	return &Manager{
 		Writer: writer,
 		Reader: reader,
-	}
+	}, nil
 }
 
 func (m *Manager) Close() {
