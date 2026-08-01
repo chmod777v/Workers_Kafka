@@ -17,7 +17,10 @@ spec:
         image: {{ .Values.gateway.image }}
         imagePullPolicy: Never
         ports:
-        - containerPort: {{ .Values.gateway.port }}
+        - name: http
+          containerPort: {{ .Values.gateway.port }}
+        - name: health
+          containerPort: 8091
         env:
           - name: ENV
             value: development
@@ -42,12 +45,34 @@ spec:
           - name: DB_DBNAME
             value: Tasks
 
-          - name: METRIC_HOST
+          - name: HEALTH_HOST
             value: "0.0.0.0"
-          - name: METRIC_PORT
+          - name: HEALTH_PORT
             value: "8091"
+    
 
-          - name: HEALTHCHECK_HOST
-            value: "0.0.0.0"
-          - name: HEALTHCHECK_PORT
-            value: "8092"
+        startupProbe:
+          httpGet:
+            path: /live
+            port: 8091
+          failureThreshold: 10     # Даем до 10 попыток на запуск
+          periodSeconds: 3        # Проверяем каждые 3 секунды
+          timeoutSeconds: 2        # Ждем ответ не более 2 секунд
+      
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8091
+          initialDelaySeconds: 5    # Даем небольшую фору после старта
+          periodSeconds: 10         # Проверяем каждые 10 секунд
+          timeoutSeconds: 2         # Ждем ответ не более 2 секунд
+          failureThreshold: 2       # 2 неудачи подряд -> перезапуск контейнера
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8091
+          initialDelaySeconds: 5
+          periodSeconds: 5          # Проверяем чаще, чем liveness
+          timeoutSeconds: 4         # Чуть больше таймаут, т.к. проверяет внешние зависимости
+          failureThreshold: 2       # 2 неудачи -> убрать из трафика

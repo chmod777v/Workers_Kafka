@@ -1,19 +1,17 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"workers_kafka_gateway/internal/config"
 	"workers_kafka_gateway/internal/health"
+	my_postgres "workers_kafka_gateway/internal/postgres"
 
 	my_kafka "workers_kafka_gateway/internal/kafka"
 	"workers_kafka_gateway/internal/logger"
 	"workers_kafka_gateway/internal/rest/gateway"
 
 	"workers_kafka_gateway/internal/shutdown"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -27,20 +25,15 @@ func main() {
 	dbLink := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		cfg.Db.Username, cfg.Db.Password, cfg.Db.Host, cfg.Db.Port, cfg.Db.DbName)
 
-	dbpool, err := pgxpool.New(context.Background(), dbLink)
+	dbpool, err := my_postgres.NewPool(dbLink)
 	if err != nil {
-		slog.Error("Failed to connect to the postgreSQL", "ERROR", err.Error())
+		slog.Error("Failed create dbpool", "ERROR", err)
 		return
 	}
-	if err := dbpool.Ping(context.Background()); err != nil {
-		slog.Error("Failed to ping postgreSQL", "ERROR", err.Error())
-		return
-	}
-	slog.Info("Database connection successfully")
+	slog.Info("Database connected successfully")
 
 	defer func() { //close
 		dbpool.Close()
-		dbpool = nil
 		slog.Info("Database connection closed successfully")
 	}()
 
