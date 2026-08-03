@@ -74,5 +74,5 @@ spec:
             port: 8091
           initialDelaySeconds: 5
           periodSeconds: 5          # Проверяем чаще, чем liveness
-          timeoutSeconds: 4         # Чуть больше таймаут, т.к. проверяет внешние зависимости
+          timeoutSeconds: 6         # Чуть больше таймаут, т.к. проверяет внешние зависимости
           failureThreshold: 2       # 2 неудачи -> убрать из трафика

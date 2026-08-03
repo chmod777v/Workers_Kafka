@@ -16,7 +16,7 @@ func NewPool(dbLink string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("Failed to connect to the postgreSQL: %s", err.Error())
 	}
 
-	if err := Ping(3, dbpool); err != nil {
+	if err := Ping(dbpool); err != nil {
 		dbpool.Close()
 		return nil, err
 	}
@@ -24,7 +24,8 @@ func NewPool(dbLink string) (*pgxpool.Pool, error) {
 	return dbpool, nil
 }
 
-func Ping(retries int, dbpool *pgxpool.Pool) error {
+func Ping(dbpool *pgxpool.Pool) error {
+	retries := 3
 	for attempt := 1; attempt <= retries; attempt++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		err := dbpool.Ping(ctx)

@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: my-monitor
+  name: gateway-monitor
   namespace: monitoring
   labels:
     release: prometheus
@@ -9,9 +9,6 @@ spec:
   selector:
     matchLabels:
       app: gateway
-  namespaceSelector:
-    matchNames:
-      - default    
   podMetricsEndpoints:
     - port: health
       path: /metrics

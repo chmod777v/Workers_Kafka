@@ -1,4 +1,4 @@
-package my_kafka
+package my_kafka_listener
 
 import (
 	"context"

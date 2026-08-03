@@ -4,28 +4,30 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"sync/atomic"
-	"time"
+	my_kafka_manager "workers_kafka_worker/internal/kafka/manager"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Health struct {
-	server *http.Server
-	ready  atomic.Bool
+	server    *http.Server
+	kafkaAddr string
 }
 
-func StartHealth(addr string, errChan chan error) *Health {
-	health := &Health{}
+func StartHealth(addr string, errChan chan error, kafkaAddr string) *Health {
+	health := &Health{
+		server:    nil,
+		kafkaAddr: kafkaAddr,
+	}
 
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer) //Для перехвата паник
+
 	router.Handle("/metrics", promhttp.Handler())
-	router.HandleFunc("/ready", health.handler)
+	router.HandleFunc("/live", health.liveHandler)
+	router.HandleFunc("/ready", health.readyHandler)
 
 	serv := &http.Server{
 		Addr:    addr,
@@ -51,30 +53,17 @@ func (h *Health) Close(ctx context.Context) error {
 	return nil
 }
 
-func (h *Health) Ready() {
-	h.ready.Store(true)
-}
-
-func (h *Health) handler(w http.ResponseWriter, r *http.Request) {
-	if !h.ready.Load() {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		return
-	}
+func (h *Health) liveHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Metrics
-var (
-	requestDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "worker",
-			Name:      "request_duration_seconds",
-			Help:      "request duration in seconds",
-			Buckets:   prometheus.DefBuckets,
-		}, []string{},
-	)
-)
+func (h *Health) readyHandler(w http.ResponseWriter, r *http.Request) {
+	//Kafka
+	if err := my_kafka_manager.Ping(h.kafkaAddr); err != nil {
+		slog.Error("ReadyHandler, Failed to ping kafka", "ERROR", err.Error())
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
 
-func ObserveRequest(duration time.Duration) {
-	requestDuration.WithLabelValues().Observe(duration.Seconds())
+	w.WriteHeader(http.StatusOK)
 }

@@ -4,13 +4,13 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"time"
+	my_kafka "workers_kafka_gateway/internal/kafka"
+	my_postgres "workers_kafka_gateway/internal/postgres"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/segmentio/kafka-go"
 )
 
 type Health struct {
@@ -28,6 +28,7 @@ func StartHealth(addr string, errChan chan error, dbpool *pgxpool.Pool, kafkaAdd
 
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer) //Для перехвата паник
+
 	router.Handle("/metrics", promhttp.Handler())
 	router.HandleFunc("/live", health.liveHandler)
 	router.HandleFunc("/ready", health.readyHandler)
@@ -62,26 +63,18 @@ func (h *Health) liveHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Health) readyHandler(w http.ResponseWriter, r *http.Request) {
 	//BD
-	dbCtx, dbCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer dbCancel()
-
-	if err := h.dbpool.Ping(dbCtx); err != nil {
+	if err := my_postgres.Ping(h.dbpool); err != nil {
 		slog.Error("ReadyHandler, Failed to ping postgreSQL", "ERROR", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
 
 	//Kafka
-	kafkaCtx, kafkaCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer kafkaCancel()
-
-	conn, err := kafka.DialContext(kafkaCtx, "tcp", h.kafkaAddr)
-	if err != nil {
+	if err := my_kafka.Ping(h.kafkaAddr); err != nil {
 		slog.Error("ReadyHandler, Failed to ping kafka", "ERROR", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
-	defer conn.Close()
 
 	w.WriteHeader(http.StatusOK)
 }

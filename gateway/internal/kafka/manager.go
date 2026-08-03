@@ -2,6 +2,7 @@ package my_kafka
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -15,14 +16,9 @@ type Manager struct {
 
 func NewManager(kafkaAddr string) (*Manager, error) {
 	//Ping
-	kafkaCtx, kafkaCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer kafkaCancel()
-
-	conn, err := kafka.DialContext(kafkaCtx, "tcp", kafkaAddr)
-	if err != nil {
+	if err := Ping(kafkaAddr); err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 
 	//Writer
 	writer := kafka.NewWriter(kafka.WriterConfig{
@@ -48,6 +44,25 @@ func NewManager(kafkaAddr string) (*Manager, error) {
 		Writer: writer,
 		Reader: reader,
 	}, nil
+}
+
+func Ping(kafkaAddr string) error {
+	retries := 3
+	for attempt := 1; attempt <= retries; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		conn, err := kafka.DialContext(ctx, "tcp", kafkaAddr)
+		cancel()
+
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+		if attempt == retries {
+			return fmt.Errorf("Failed ping kafka: %s", err.Error())
+		}
+		time.Sleep(3 * time.Second)
+	}
+	return nil
 }
 
 func (m *Manager) Close() {

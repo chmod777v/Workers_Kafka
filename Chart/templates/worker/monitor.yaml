@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: worker-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  podMetricsEndpoints:
+    - port: health
+      path: /metrics
+      interval: 5s        # Проверяем раз в 5 секунд
+      scrapeTimeout: 3s   # Но если ответа нет за 3 секунды — считаем, что что-то пошло не так
