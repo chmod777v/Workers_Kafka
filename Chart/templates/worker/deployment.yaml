@@ -21,7 +21,7 @@ spec:
           containerPort: 9091
         env:
           - name: ENV
-            value: development
+            value: {{ .Values.worker.env | quote}}
           - name: KAFKA_HOST
             value: kafka-service
           - name: KAFKA_PORT
@@ -30,4 +30,4 @@ spec:
           - name: HEALTH_HOST
             value: "0.0.0.0"
           - name: HEALTH_PORT
-            value: "9091"
+            value: {{ .Values.worker.healthPort | quote}}

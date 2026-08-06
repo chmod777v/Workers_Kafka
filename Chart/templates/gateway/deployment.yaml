@@ -23,11 +23,11 @@ spec:
           containerPort: 8091
         env:
           - name: ENV
-            value: development
+            value: {{ .Values.gateway.env | quote}}
           - name: GATEWAY_HOST
             value: "0.0.0.0"
           - name: GATEWAY_PORT
-            value: "8090"
+            value: {{ .Values.gateway.port | quote}}
 
           - name: KAFKA_HOST
             value: kafka-service
@@ -35,26 +35,26 @@ spec:
             value: "9092"
 
           - name: DB_USERNAME
-            value: postgres
+            value: {{ .Values.postgres.username | quote }}
           - name: DB_PASSWORD
-            value: "1234"
+            value: {{ .Values.postgres.password | quote }}
           - name: DB_HOST
             value: postgres-service
           - name: DB_PORT
             value: "5432"
           - name: DB_DBNAME
-            value: Tasks
+            value: {{ .Values.postgres.dbName | quote }}
 
           - name: HEALTH_HOST
             value: "0.0.0.0"
           - name: HEALTH_PORT
-            value: "8091"
+            value: {{ .Values.gateway.healthPort | quote}}
     
 
         startupProbe:
           httpGet:
             path: /live
-            port: 8091
+            port: {{ .Values.gateway.healthPort }}
           failureThreshold: 10     # Даем до 10 попыток на запуск
           periodSeconds: 3        # Проверяем каждые 3 секунды
           timeoutSeconds: 2        # Ждем ответ не более 2 секунд
@@ -62,7 +62,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /live
-            port: 8091
+            port: {{ .Values.gateway.healthPort }}
           initialDelaySeconds: 5    # Даем небольшую фору после старта
           periodSeconds: 10         # Проверяем каждые 10 секунд
           timeoutSeconds: 2         # Ждем ответ не более 2 секунд
@@ -71,7 +71,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /ready
-            port: 8091
+            port: {{ .Values.gateway.healthPort }}
           initialDelaySeconds: 5
           periodSeconds: 5          # Проверяем чаще, чем liveness
           timeoutSeconds: 6         # Чуть больше таймаут, т.к. проверяет внешние зависимости

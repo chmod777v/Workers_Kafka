@@ -1,9 +1,0 @@
-env: "development" #production
-
-kafka:
-  host: "kafka-service"
-  port: 9092
-
-metric:
-  host: "0.0.0.0"
-  port: 9091

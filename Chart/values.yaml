@@ -1,15 +1,15 @@
 gateway:
+  env: development #production
   replicaCount: 1
   image: workers_kafka-gateway
   port: 8090
-
-  probe:
-    port: 8080
-    path: /ready
+  healthPort: 8091
 
 worker:
-  replicaCount: 5
+  env: development #production
+  replicaCount: 1
   image: workers_kafka-worker
+  healthPort: 9091
 
 ingress:
   host: "localhost"

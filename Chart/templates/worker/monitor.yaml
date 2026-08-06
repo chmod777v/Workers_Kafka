@@ -9,6 +9,9 @@ spec:
   selector:
     matchLabels:
       app: worker
+  namespaceSelector:
+    matchNames:
+      - default    
   podMetricsEndpoints:
     - port: health
       path: /metrics
