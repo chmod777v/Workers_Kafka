@@ -49,7 +49,19 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: Tasks
 
+  redis:
+    container_name: "redis"
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+  
   
 volumes:
   postgres_data:
   kafka_data:
+  redis_data:

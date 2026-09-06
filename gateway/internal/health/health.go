@@ -9,20 +9,19 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Health struct {
 	server    *http.Server
-	dbpool    *pgxpool.Pool
+	dbAdapter *my_postgres.DBAdapter
 	kafkaAddr string
 }
 
-func StartHealth(addr string, errChan chan error, dbpool *pgxpool.Pool, kafkaAddr string) *Health {
+func StartHealth(addr string, errChan chan error, dbAdapter *my_postgres.DBAdapter, kafkaAddr string) *Health {
 	health := &Health{
 		server:    nil,
-		dbpool:    dbpool,
+		dbAdapter: dbAdapter,
 		kafkaAddr: kafkaAddr,
 	}
 
@@ -63,7 +62,7 @@ func (h *Health) liveHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Health) readyHandler(w http.ResponseWriter, r *http.Request) {
 	//BD
-	if err := my_postgres.Ping(h.dbpool); err != nil {
+	if err := h.dbAdapter.Ping(); err != nil {
 		slog.Error("ReadyHandler, Failed to ping postgreSQL", "ERROR", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return

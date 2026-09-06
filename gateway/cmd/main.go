@@ -25,7 +25,7 @@ func main() {
 	dbLink := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		cfg.Db.Username, cfg.Db.Password, cfg.Db.Host, cfg.Db.Port, cfg.Db.DbName)
 
-	dbpool, err := my_postgres.NewPool(dbLink)
+	dbAdapter, err := my_postgres.NewDBAdapter(dbLink)
 	if err != nil {
 		slog.Error("Failed create dbpool", "ERROR", err)
 		return
@@ -33,7 +33,7 @@ func main() {
 	slog.Info("Database connected successfully")
 
 	defer func() { //close
-		dbpool.Close()
+		dbAdapter.Close()
 		slog.Info("Database connection closed successfully")
 	}()
 
@@ -52,7 +52,7 @@ func main() {
 	}()
 
 	// Kafka Listen
-	listener := my_kafka.NewListener(manager.Reader, dbpool)
+	listener := my_kafka.NewListener(manager.Reader, dbAdapter)
 	listener.Listening()
 	slog.Info("Kafka Listen")
 
@@ -63,12 +63,12 @@ func main() {
 
 	// Gateway
 	gatewayAddr := fmt.Sprintf("%s:%d", cfg.Gateway.Host, cfg.Gateway.Port)
-	gateway := gateway.StartGateway(gatewayAddr, errChan, manager.Writer, dbpool)
+	gateway := gateway.StartGateway(gatewayAddr, errChan, manager.Writer, dbAdapter)
 	slog.Info("Gateway started", "Addr", gatewayAddr)
 
 	// Helth
 	healthAddr := fmt.Sprintf("%s:%d", cfg.Health.Host, cfg.Health.Port)
-	health := health.StartHealth(healthAddr, errChan, dbpool, kafkaAddr)
+	health := health.StartHealth(healthAddr, errChan, dbAdapter, kafkaAddr)
 	slog.Info("Health started", "HealthCheckAddr", healthAddr+"/ready"+" & "+healthAddr+"/live", "MetricsAddr", healthAddr+"/metrics")
 
 	shutdown.Shutdown(errChan, health, gateway)

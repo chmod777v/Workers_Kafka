@@ -6,8 +6,8 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
+	my_postgres "workers_kafka_gateway/internal/postgres"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -17,22 +17,22 @@ type Data struct {
 }
 
 type Listener struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     *sync.WaitGroup
-	reader *kafka.Reader
-	dbpool *pgxpool.Pool
+	ctx       context.Context
+	cancel    context.CancelFunc
+	wg        *sync.WaitGroup
+	reader    *kafka.Reader
+	dbAdapter *my_postgres.DBAdapter
 }
 
-func NewListener(reader *kafka.Reader, dbpool *pgxpool.Pool) Listener {
+func NewListener(reader *kafka.Reader, dbAdapter *my_postgres.DBAdapter) Listener {
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	return Listener{
-		ctx:    ctx,
-		cancel: cancel,
-		wg:     wg,
-		reader: reader,
-		dbpool: dbpool,
+		ctx:       ctx,
+		cancel:    cancel,
+		wg:        wg,
+		reader:    reader,
+		dbAdapter: dbAdapter,
 	}
 }
 
@@ -63,11 +63,8 @@ func (l *Listener) Listening() {
 			slog.Debug("", "Token", data.Token, "Message", data.Message)
 
 			//DB
-			_, err = l.dbpool.Exec(context.Background(),
-				"UPDATE tasks SET message=$1 WHERE token = $2", data.Message, data.Token)
-			if err != nil {
+			if err := l.dbAdapter.UpdateTask(data.Message, data.Token); err != nil {
 				slog.Error("Listening error, BD", "ERROR", err.Error())
-				return
 			}
 		}
 	}()
