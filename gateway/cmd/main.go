@@ -6,6 +6,7 @@ import (
 	"workers_kafka_gateway/internal/config"
 	"workers_kafka_gateway/internal/health"
 	my_postgres "workers_kafka_gateway/internal/postgres"
+	my_redis "workers_kafka_gateway/internal/redis"
 
 	my_kafka "workers_kafka_gateway/internal/kafka"
 	"workers_kafka_gateway/internal/logger"
@@ -27,7 +28,7 @@ func main() {
 
 	dbAdapter, err := my_postgres.NewDBAdapter(dbLink)
 	if err != nil {
-		slog.Error("Failed create dbpool", "ERROR", err)
+		slog.Error("Failed create dbAdapter", "ERROR", err)
 		return
 	}
 	slog.Info("Database connected successfully")
@@ -35,6 +36,20 @@ func main() {
 	defer func() { //close
 		dbAdapter.Close()
 		slog.Info("Database connection closed successfully")
+	}()
+
+	// REDIS
+	redisAddr := fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)
+	redisAdapter, err := my_redis.NewAdapter(redisAddr, cfg.Redis.Password)
+	if err != nil {
+		slog.Error("Failed create redisAdapter", "ERROR", err)
+		return
+	}
+	slog.Info("Redis connected successfully")
+
+	defer func() { //close
+		redisAdapter.Close()
+		slog.Info("Redis connection closed successfully")
 	}()
 
 	// Kafka rw
@@ -63,7 +78,7 @@ func main() {
 
 	// Gateway
 	gatewayAddr := fmt.Sprintf("%s:%d", cfg.Gateway.Host, cfg.Gateway.Port)
-	gateway := gateway.StartGateway(gatewayAddr, errChan, manager.Writer, dbAdapter)
+	gateway := gateway.StartGateway(gatewayAddr, errChan, manager.Writer, dbAdapter, redisAdapter)
 	slog.Info("Gateway started", "Addr", gatewayAddr)
 
 	// Helth

@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/jackc/pgx/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -21,12 +22,17 @@ type Database interface {
 	GetTask(ctx context.Context, token string) (string, error)
 }
 
+type Cache interface {
+	AddTask(ctx context.Context, token, message string) error
+	GetTask(ctx context.Context, token string) (string, error)
+}
+
 type Gateway struct {
 	server *http.Server
 }
 
-func StartGateway(addr string, errChan chan error, writer *kafka.Writer, db Database) *Gateway {
-	router := newRouter(db, writer)
+func StartGateway(addr string, errChan chan error, writer *kafka.Writer, db Database, cache Cache) *Gateway {
+	router := newRouter(db, cache, writer)
 
 	server := &http.Server{
 		Addr:    addr,
@@ -80,7 +86,7 @@ func handlerPost(db Database, writer *kafka.Writer) http.HandlerFunc {
 		w.Write([]byte(token))
 	}
 }
-func handlerGet(db Database) http.HandlerFunc {
+func handlerGet(db Database, cache Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var request struct{ Token string }
 		if err := render.DecodeJSON(r.Body, &request); err != nil {
@@ -88,8 +94,24 @@ func handlerGet(db Database) http.HandlerFunc {
 			slog.Error("HandlerGet err, render.DecodeJSON", "ERROR", err.Error())
 			return
 		}
+		//Redis
+		message, err := cache.GetTask(r.Context(), request.Token)
+
+		if err == nil {
+			if message == "" {
+				w.Write([]byte("In progress"))
+				return
+			}
+			w.Write([]byte(message))
+			return
+		}
+
+		if !errors.Is(err, redis.Nil) {
+			slog.Error("HandlerGet error, Cache GetTask", "ERROR", err.Error())
+		}
+
 		// BD
-		message, err := db.GetTask(r.Context(), request.Token)
+		message, err = db.GetTask(r.Context(), request.Token)
 
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -100,14 +122,21 @@ func handlerGet(db Database) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
 		if message == "" {
 			w.Write([]byte("In progress"))
 			return
 		}
 		w.Write([]byte(message))
+
+		//REDIS
+		if err = cache.AddTask(r.Context(), request.Token, message); err != nil {
+			slog.Error("HandlerGet error, Cache AddTask", "ERROR", err.Error())
+		}
+
 	}
 }
-func newRouter(db Database, writer *kafka.Writer) *chi.Mux {
+func newRouter(db Database, cache Cache, writer *kafka.Writer) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Recoverer) //Для перехвата паник
@@ -116,6 +145,6 @@ func newRouter(db Database, writer *kafka.Writer) *chi.Mux {
 	router.Use(my_middleware.Logger)
 
 	router.Post("/", handlerPost(db, writer))
-	router.Get("/", handlerGet(db))
+	router.Get("/", handlerGet(db, cache))
 	return router
 }

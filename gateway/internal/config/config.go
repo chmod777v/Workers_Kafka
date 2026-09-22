@@ -12,6 +12,7 @@ type Config struct {
 	Gateway Gateway  `yaml:"gateway"`
 	Kafka   Kafka    `yaml:"kafka"`
 	Db      Database `yaml:"database"`
+	Redis   Redis    `yaml:"redis"`
 	Health  Health   `yaml:"health"`
 }
 
@@ -31,6 +32,12 @@ type Database struct {
 	Host     string `yaml:"host" env:"DB_HOST"`
 	Port     int    `yaml:"port" env:"DB_PORT"`
 	DbName   string `yaml:"db_name" env:"DB_DBNAME"`
+}
+
+type Redis struct {
+	Port     int    `yaml:"port" env:"REDIS_PORT"`
+	Host     string `yaml:"host" env:"REDIS_HOST"`
+	Password string `yaml:"password" env:"REDIS_PASSWORD"`
 }
 
 type Health struct {
