@@ -45,6 +45,13 @@ spec:
           - name: DB_DBNAME
             value: {{ .Values.postgres.dbName | quote }}
 
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_HOST
+            value: redis-service
+          - name: REDIS_PASSWORD
+            value: {{ .Values.redis.password | quote }}
+
           - name: HEALTH_HOST
             value: "0.0.0.0"
           - name: HEALTH_PORT

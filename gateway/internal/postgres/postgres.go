@@ -18,7 +18,7 @@ func NewDBAdapter(dbLink string) (*DBAdapter, error) {
 
 	dbpool, err := pgxpool.New(ctx, dbLink)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to the postgreSQL: %s", err.Error())
+		return nil, fmt.Errorf("Failed to connect to the postgreSQL: %s", err)
 	}
 
 	adapter := &DBAdapter{pool: dbpool}
@@ -42,7 +42,7 @@ func (d *DBAdapter) Ping() error {
 			return nil
 		}
 		if attempt == retries {
-			return fmt.Errorf("Failed ping postgreSQL: %s", err.Error())
+			return fmt.Errorf("Failed ping postgreSQL: %s", err)
 		}
 		time.Sleep(3 * time.Second)
 	}

@@ -47,6 +47,17 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: Tasks
 
+  redis:
+      container_name: "redis"
+      image: redis:alpine
+      restart: unless-stopped
+      ports:
+        - 6379:6379
+      volumes:
+        - redis_data:/data
+        - ./redis.conf:/usr/local/etc/redis/redis.conf
+      command: redis-server /usr/local/etc/redis/redis.conf
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -111,6 +122,10 @@ services:
       DB_HOST: postgresql
       DB_PORT: 5432
       DB_DBNAME: Tasks
+
+      REDIS_PORT: 6379
+      REDIS_HOST: redis
+      REDIS_PASSWORD: "12345"
 
       HEALTH_HOST: 0.0.0.0
       HEALTH_PORT: 8091

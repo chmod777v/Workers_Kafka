@@ -57,7 +57,7 @@ func main() {
 
 	manager, err := my_kafka.NewManager(kafkaAddr)
 	if err != nil {
-		slog.Error("Failed to ping kafka", "ERROR", err.Error())
+		slog.Error("Failed to ping kafka", "ERROR", err)
 		return
 	}
 	slog.Info("Kafka writer and reader launched successfully", "KafkaAddr", kafkaAddr)

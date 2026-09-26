@@ -23,7 +23,7 @@ func main() {
 	kafkaAddr := fmt.Sprintf("%s:%d", cfg.Kafka.Host, cfg.Kafka.Port)
 	manager, err := my_kafka_manager.NewManager(kafkaAddr)
 	if err != nil {
-		slog.Error("Failed to ping kafka", "ERROR", err.Error())
+		slog.Error("Failed to ping kafka", "ERROR", err)
 		return
 	}
 	slog.Info("Kafka writer and reader launched successfully", "KafkaAddr", kafkaAddr)

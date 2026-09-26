@@ -69,7 +69,7 @@ func handlerPost(db Database, writer *kafka.Writer) http.HandlerFunc {
 
 		// BD
 		if err := db.CreateTask(r.Context(), token); err != nil {
-			slog.Error("HandlerPost error, BD", "ERROR", err.Error())
+			slog.Error("HandlerPost error, BD", "ERROR", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -79,7 +79,7 @@ func handlerPost(db Database, writer *kafka.Writer) http.HandlerFunc {
 			Value: []byte(token),
 		})
 		if err != nil {
-			slog.Error("HandlerPost error, Kafka", "ERROR", err.Error())
+			slog.Error("HandlerPost error, Kafka", "ERROR", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -91,7 +91,7 @@ func handlerGet(db Database, cache Cache) http.HandlerFunc {
 		var request struct{ Token string }
 		if err := render.DecodeJSON(r.Body, &request); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			slog.Error("HandlerGet err, render.DecodeJSON", "ERROR", err.Error())
+			slog.Error("HandlerGet err, render.DecodeJSON", "ERROR", err)
 			return
 		}
 		//Redis
@@ -107,7 +107,7 @@ func handlerGet(db Database, cache Cache) http.HandlerFunc {
 		}
 
 		if !errors.Is(err, redis.Nil) {
-			slog.Error("HandlerGet error, Cache GetTask", "ERROR", err.Error())
+			slog.Error("HandlerGet error, Cache GetTask", "ERROR", err)
 		}
 
 		// BD
@@ -118,7 +118,7 @@ func handlerGet(db Database, cache Cache) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			slog.Error("HandlerGet error, BD", "ERROR", err.Error())
+			slog.Error("HandlerGet error, BD", "ERROR", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -131,7 +131,7 @@ func handlerGet(db Database, cache Cache) http.HandlerFunc {
 
 		//REDIS
 		if err = cache.AddTask(r.Context(), request.Token, message); err != nil {
-			slog.Error("HandlerGet error, Cache AddTask", "ERROR", err.Error())
+			slog.Error("HandlerGet error, Cache AddTask", "ERROR", err)
 		}
 
 	}

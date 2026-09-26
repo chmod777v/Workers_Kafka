@@ -1,14 +1,14 @@
 gateway:
   env: development #production
   replicaCount: 1
-  image: workers_kafka-gateway
+  image: gateway
   port: 8090
   healthPort: 8091
 
 worker:
   env: development #production
   replicaCount: 1
-  image: workers_kafka-worker
+  image: worker
   healthPort: 9091
 
 ingress:
@@ -20,3 +20,5 @@ postgres:
   password: "1234"
   dbName: "Tasks"
 
+redis:
+  password: "12345"

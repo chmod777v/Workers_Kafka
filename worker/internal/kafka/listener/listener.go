@@ -53,7 +53,7 @@ func (l *Listener) Listening() {
 				if errors.Is(err, context.Canceled) {
 					return
 				}
-				slog.Error("Listening err, Failed read message", "ERROR", err.Error())
+				slog.Error("Listening err, Failed read message", "ERROR", err)
 				continue
 			}
 			token := string(msg.Value)
@@ -66,7 +66,7 @@ func (l *Listener) Listening() {
 			}
 			value, err := json.Marshal(data)
 			if err != nil {
-				slog.Error("Listening err, Marshal", "ERROR", err.Error())
+				slog.Error("Listening err, Marshal", "ERROR", err)
 				continue
 			}
 
@@ -76,7 +76,7 @@ func (l *Listener) Listening() {
 				Value: value,
 			})
 			if err != nil {
-				slog.Error("Listening err, Kafka", "ERROR", err.Error())
+				slog.Error("Listening err, Kafka", "ERROR", err)
 				continue
 			}
 		}

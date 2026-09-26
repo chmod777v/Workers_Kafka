@@ -47,7 +47,7 @@ func (r *RedisAdapter) Ping() error {
 			return nil
 		}
 		if attempt == retries {
-			return fmt.Errorf("Failed ping redis: %s", err.Error())
+			return fmt.Errorf("Failed ping redis: %s", err)
 		}
 		time.Sleep(3 * time.Second)
 	}

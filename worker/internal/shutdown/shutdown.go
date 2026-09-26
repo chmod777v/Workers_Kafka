@@ -18,7 +18,7 @@ func Shutdown(errChan chan error, health *health.Health) {
 	case <-done:
 		slog.Info("Shutdown")
 	case err := <-errChan:
-		slog.Error("Service error, initiating shutdown", "ERROR:", err.Error())
+		slog.Error("Service error, initiating shutdown", "ERROR:", err)
 	}
 
 label:
@@ -35,7 +35,7 @@ label:
 	defer cancel()
 
 	if err := health.Close(ctx); err != nil {
-		slog.Error("Failed to stop health", "ERROR:", err.Error())
+		slog.Error("Failed to stop health", "ERROR:", err)
 	} else {
 		slog.Info("Health stopped successfully")
 	}

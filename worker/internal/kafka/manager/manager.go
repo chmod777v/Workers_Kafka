@@ -58,7 +58,7 @@ func Ping(kafkaAddr string) error {
 			return nil
 		}
 		if attempt == retries {
-			return fmt.Errorf("Failed ping kafka: %s", err.Error())
+			return fmt.Errorf("Failed ping kafka: %s", err)
 		}
 		time.Sleep(3 * time.Second)
 	}
@@ -67,13 +67,13 @@ func Ping(kafkaAddr string) error {
 
 func (m *Manager) Close() {
 	if err := m.Writer.Close(); err != nil {
-		slog.Error("Failed to close kafka writer", "ERROR", err.Error())
+		slog.Error("Failed to close kafka writer", "ERROR", err)
 	} else {
 		slog.Info("Kafka writer closed successfully")
 	}
 
 	if err := m.Reader.Close(); err != nil {
-		slog.Error("Failed to close kafka reader", "ERROR", err.Error())
+		slog.Error("Failed to close kafka reader", "ERROR", err)
 	} else {
 		slog.Info("Kafka reader closed successfully")
 	}

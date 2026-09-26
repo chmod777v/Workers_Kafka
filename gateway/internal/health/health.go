@@ -63,14 +63,14 @@ func (h *Health) liveHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Health) readyHandler(w http.ResponseWriter, r *http.Request) {
 	//BD
 	if err := h.dbAdapter.Ping(); err != nil {
-		slog.Error("ReadyHandler, Failed to ping postgreSQL", "ERROR", err.Error())
+		slog.Error("ReadyHandler, Failed to ping postgreSQL", "ERROR", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
 
 	//Kafka
 	if err := my_kafka.Ping(h.kafkaAddr); err != nil {
-		slog.Error("ReadyHandler, Failed to ping kafka", "ERROR", err.Error())
+		slog.Error("ReadyHandler, Failed to ping kafka", "ERROR", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}

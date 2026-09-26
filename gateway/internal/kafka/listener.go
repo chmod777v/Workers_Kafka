@@ -52,19 +52,19 @@ func (l *Listener) Listening() {
 				if errors.Is(err, context.Canceled) {
 					return
 				}
-				slog.Error("Listening err, read message", "ERROR", err.Error())
+				slog.Error("Listening err, read message", "ERROR", err)
 				continue
 			}
 			var data Data
 			if err := json.Unmarshal(msg.Value, &data); err != nil {
-				slog.Error("Listening err, unmarshal message", "ERROR", err.Error())
+				slog.Error("Listening err, unmarshal message", "ERROR", err)
 				continue
 			}
 			slog.Debug("", "Token", data.Token, "Message", data.Message)
 
 			//DB
 			if err := l.dbAdapter.UpdateTask(data.Message, data.Token); err != nil {
-				slog.Error("Listening error, BD", "ERROR", err.Error())
+				slog.Error("Listening error, BD", "ERROR", err)
 			}
 		}
 	}()
